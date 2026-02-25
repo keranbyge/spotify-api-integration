@@ -201,21 +201,23 @@
     </div>
 
     <script>
-        const API_URL = 'https://spotifyapi-8p76.onrender.com/currently-playing';
+        const API_URL = '/currently-playing';
 
         async function fetchCurrentlyPlaying() {
             try {
                 const response = await fetch(API_URL);
                 const data = await response.json();
 
-                if (typeof data === 'string' && data.includes('No track') || !data.is_playing) {
-                    showOfflineLoader();
+                if (data && data.status === 'NO_PLAYBACK') {
+                    showNoPlaybackMessage(data.message);
+                } else if (!data || !data.is_playing || !data.item) {
+                    showNoPlaybackMessage('No active Spotify playback. Please start a song on Spotify.');
                 } else {
                     showPlayingLoader(data);
                 }
             } catch (error) {
                 console.error('Error fetching song:', error);
-                showOfflineLoader();
+                showNoPlaybackMessage('No active Spotify playback. Please start a song on Spotify.');
             }
         }
 
@@ -252,29 +254,22 @@
             );
         }
 
-        function showOfflineLoader() {
+        function showNoPlaybackMessage(message) {
             const playingLoader = document.getElementById('playing-loader');
             const offlineLoader = document.getElementById('offline-loader');
             const songTitle = document.getElementById('offline-song-title');
             const artist = document.getElementById('offline-artist');
-            // const albumArt = document.getElementById('offline-album-art');
 
             playingLoader.style.display = 'none';
             offlineLoader.style.display = 'flex';
 
-            songTitle.textContent = 'Offline';
-            artist.textContent = 'Playing no songs!';
-            // albumArt.src = 'https://atd-bloges.s3.us-east-2.amazonaws.com/wp-content/uploads/2023/06/30040520/2-10.jpg';
+            songTitle.textContent = 'NO PLAYBACK';
+            artist.textContent = message || 'No active Spotify playback. Please start a song on Spotify.';
 
-            // Animate offline loader elements
             gsap.fromTo(offlineLoader,
                 { opacity: 0 },
                 { opacity: 1, duration: 0.5, ease: 'power2.out' }
             );
-            // gsap.fromTo(albumArt,
-            //     { opacity: 1 },
-            //     { opacity: 0.5, duration: 0.5, ease: 'power2.out' }
-            // );
             gsap.fromTo('.play',
                 { opacity: 0, scale: 0.8 },
                 { opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(1.7)' }

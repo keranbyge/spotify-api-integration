@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.exceptions.SpotifyWebApiException;
+import se.michaelthelin.spotify.model_objects.specification.User;
 import se.michaelthelin.spotify.requests.authorization.authorization_code.AuthorizationCodeUriRequest;
 
 import java.io.File;
@@ -78,14 +79,25 @@ public class SpotifyAuthService {
     public void exchangeCodeForTokens(String code) throws IOException, SpotifyWebApiException, ParseException {
         var credentials = spotifyApi.authorizationCode(code).build().execute();
         spotifyApi.setAccessToken(credentials.getAccessToken());
-        spotifyApi.setRefreshToken(credentials.getRefreshToken());
-        saveTokensToFile(credentials.getRefreshToken());
+        System.out.println("[OAuth] Access token set after authorization code exchange");
+        if (credentials.getRefreshToken() != null) {
+            spotifyApi.setRefreshToken(credentials.getRefreshToken());
+            System.out.println("[OAuth] Refresh token obtained and set");
+            saveTokensToFile(credentials.getRefreshToken());
+        }
+
+        // Fetch Spotify profile (for logging/information only)
+        User currentUser = spotifyApi.getCurrentUsersProfile().build().execute();
+        System.out.println("[OAuth] Logged in Spotify user: " + currentUser.getDisplayName());
     }
 
     public void refreshAccessToken() throws IOException, SpotifyWebApiException, ParseException {
+        if (spotifyApi.getRefreshToken() == null) {
+            throw new IllegalStateException("No refresh token available to refresh access token");
+        }
         var credentials = spotifyApi.authorizationCodeRefresh().build().execute();
         spotifyApi.setAccessToken(credentials.getAccessToken());
-        System.out.println("Access token refreshed successfully");
+        System.out.println("[OAuth] Access token refreshed successfully using stored refresh token");
     }
 
     private void saveTokensToFile(String refreshToken) throws IOException {
@@ -99,7 +111,7 @@ public class SpotifyAuthService {
             if (Files.exists(Paths.get(tokenFilePath))) {
                 TokenData tokenData = objectMapper.readValue(new File(tokenFilePath), TokenData.class);
                 spotifyApi.setRefreshToken(tokenData.getRefreshToken());
-                System.out.println("Loaded refresh token from " + tokenFilePath);
+                System.out.println("[OAuth] Loaded refresh token from " + tokenFilePath);
             }
         } catch (IOException e) {
             System.err.println("Failed to load refresh token: " + e.getMessage());

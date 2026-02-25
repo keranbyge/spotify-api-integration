@@ -24,12 +24,10 @@ public class SpotifyController {
     @GetMapping("/currently-playing")
     public ResponseEntity<?> getCurrentlyPlaying() throws ParseException {
         try {
-            CurrentlyPlayingContext currentlyPlaying = spotifyService.getCurrentlyPlaying();
-            if (currentlyPlaying == null || currentlyPlaying.getItem() == null) {
-                return ResponseEntity.ok("No track is currently playing.");
-            }
-            return ResponseEntity.ok(currentlyPlaying);
-        } catch (IOException | SpotifyWebApiException e) {
+            Object result = spotifyService.getCurrentlyPlaying();
+            // When no playback, our service returns NoPlaybackResponse
+            return ResponseEntity.ok(result);
+        } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error fetching currently playing track: " + e.getMessage());
         }
