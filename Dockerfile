@@ -1,15 +1,12 @@
-# Stage 1: Build the application
-FROM maven:3.9.7-sapmachine-22 AS build
+# Stage 1: Build
+FROM maven:3.9.7-eclipse-temurin-21 AS build
 WORKDIR /app
-COPY pom.xml .
-RUN mvn dependency:go-offline
-
-COPY src ./src
+COPY . .
 RUN mvn clean package -DskipTests
 
-# Stage 2: Create the final image
-FROM openjdk:21
+# Stage 2: Run
+FROM eclipse-temurin:21-jdk
 WORKDIR /app
-COPY --from=build /app/target/*.jar /app/application.jar
+COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
-CMD ["java", "-jar", "application.jar"]
+CMD ["java", "-jar", "app.jar"]
