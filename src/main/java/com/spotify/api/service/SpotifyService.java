@@ -1,5 +1,6 @@
 package com.spotify.api.service;
 
+import com.spotify.api.dto.PlaybackStatusResponse;
 import org.apache.hc.core5.http.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +15,7 @@ import se.michaelthelin.spotify.model_objects.specification.PagingCursorbased;
 import se.michaelthelin.spotify.model_objects.specification.Track;
 import se.michaelthelin.spotify.model_objects.specification.User;
 
-import com.spotify.api.dto.PlaybackStatusResponse;
+
 
 import java.io.IOException;
 
@@ -49,82 +50,49 @@ public class SpotifyService {
     // UPDATED METHOD
     // ===============================
 
-    public PlaybackStatusResponse getCurrentlyPlaying() throws IOException, ParseException {
+   public PlaybackStatusResponse getCurrentlyPlaying() throws IOException, ParseException {
 
-        try {
-            CurrentlyPlaying currentlyPlaying =
-                    spotifyApi.getUsersCurrentlyPlayingTrack().build().execute();
+    try {
+        CurrentlyPlaying currentlyPlaying =
+                spotifyApi.getUsersCurrentlyPlayingTrack().build().execute();
 
-            if (currentlyPlaying == null || currentlyPlaying.getItem() == null) {
-                return new PlaybackStatusResponse(
-                        "OFFLINE",
-                        "User is offline. No song is currently playing.",
-                        null
-                );
-            }
-
-            Track track = (Track) currentlyPlaying.getItem();
-
-            String songDetails = track.getName() + " - " +
-                    track.getArtists()[0].getName();
-
-            return new PlaybackStatusResponse(
-                    "PLAYING",
-                    "Currently Playing",
-                    songDetails
-            );
-
-        } catch (SpotifyWebApiException e) {
-
-            String msg = e.getMessage() != null ?
-                    e.getMessage().toLowerCase() : "";
-
-            if (msg.contains("invalid") ||
-                msg.contains("expired") ||
-                msg.contains("401")) {
-
-                try {
-                    logger.warn("Token expired. Refreshing...");
-                    spotifyAuthService.refreshAccessToken();
-
-                    CurrentlyPlaying retried =
-                            spotifyApi.getUsersCurrentlyPlayingTrack()
-                                    .build()
-                                    .execute();
-
-                    if (retried == null || retried.getItem() == null) {
-                        return new PlaybackStatusResponse(
-                                "OFFLINE",
-                                "User is offline. No song is currently playing.",
-                                null
-                        );
-                    }
-
-                    Track track = (Track) retried.getItem();
-
-                    String songDetails = track.getName() + " - " +
-                            track.getArtists()[0].getName();
-
-                    return new PlaybackStatusResponse(
-                            "PLAYING",
-                            "Currently Playing",
-                            songDetails
-                    );
-
-                } catch (Exception ex) {
-                    logger.error("Token refresh failed: {}", ex.getMessage());
-                }
-            }
-
-            logger.error("Spotify API error: {}", e.getMessage());
-
+        // If nothing returned
+        if (currentlyPlaying == null || currentlyPlaying.getItem() == null) {
             return new PlaybackStatusResponse(
                     "OFFLINE",
-                    "Error while fetching playback status.",
+                    "No active Spotify playback",
                     null
             );
         }
+
+        // 🔥 IMPORTANT CHECK
+        if (!currentlyPlaying.getIs_playing()) {
+            return new PlaybackStatusResponse(
+                    "OFFLINE",
+                    "Spotify is paused",
+                    null
+            );
+        }
+
+        Track track = (Track) currentlyPlaying.getItem();
+
+        String songDetails =
+                track.getName() + " - " + track.getArtists()[0].getName();
+
+        return new PlaybackStatusResponse(
+                "PLAYING",
+                "Now Playing",
+                songDetails
+        );
+
+    } catch (Exception e) {
+        return new PlaybackStatusResponse(
+                "OFFLINE",
+                "Error fetching playback",
+                null
+        );
     }
+}
 
     // =========================================
     // Other methods unchanged
