@@ -26,7 +26,7 @@ public class SpotifyAuthController {
     @GetMapping("/login")
     public ResponseEntity<Void> login() {
         try {
-            if (spotifyAuthService.hasValidRefreshToken()) {
+            if (!spotifyAuthService.isLoggedIn()) {
                 return ResponseEntity.ok().build(); // No need to login if refresh token exists
             }
             URI uri = spotifyAuthService.getAuthorizationUri();
