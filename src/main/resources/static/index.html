@@ -3,30 +3,35 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Spotify Now Playing Card</title>
+
+<title>Spotify Now Playing - SK</title>
+
+<!--  Your Custom Favicon -->
+<link rel="icon" type="image/png" href="/sk_logo.png">
+
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 </head>
 
-<body class="bg-gray-900 flex items-center justify-center min-h-screen">
+<body class="bg-gradient-to-br from-gray-900 to-black flex items-center justify-center min-h-screen text-white">
 
-<div class="bg-white p-6 rounded-xl shadow-xl w-80 text-center">
+<div class="bg-white text-black p-6 rounded-2xl shadow-2xl w-80 text-center">
 
     <h2 id="status-heading" class="text-lg font-bold mb-4">
         Checking Spotify...
     </h2>
 
     <!-- PLAYING CARD -->
-    <div id="playing-card" style="display:none;">
-        <img id="album-art" class="w-24 h-24 mx-auto rounded-lg mb-4">
-        <p id="song-title" class="font-semibold"></p>
+    <div id="playing-card" class="hidden">
+        <img id="album-art" class="w-28 h-28 mx-auto rounded-xl mb-4 shadow-md">
+        <p id="song-title" class="font-semibold text-lg"></p>
         <p id="artist-name" class="text-sm text-gray-600"></p>
     </div>
 
     <!-- OFFLINE CARD -->
-    <div id="offline-card" style="display:none;">
-        <p class="font-semibold">No active Spotify playback</p>
-        <p class="text-sm text-gray-600">Start a song on Spotify 🎵</p>
+    <div id="offline-card" class="hidden">
+        <p class="font-semibold text-lg">No active Spotify playback</p>
+        <p class="text-sm text-gray-600 mt-2">Start a song on Spotify 🎵</p>
     </div>
 
 </div>
@@ -40,27 +45,31 @@ async function fetchCurrentlyPlaying() {
         const response = await fetch(API_URL);
         const data = await response.json();
 
-        if (data.status === "PLAYING") {
+        console.log("API Response:", data); // Debug log
+
+        if (data.success && data.status === "PLAYING") {
             showPlaying(data);
         } else {
             showOffline();
         }
 
     } catch (error) {
+        console.error("Error:", error);
         showOffline();
     }
 }
 
 function showPlaying(data) {
+
     document.getElementById("status-heading").innerText = "🎵 Currently Playing";
 
-    document.getElementById("playing-card").style.display = "block";
-    document.getElementById("offline-card").style.display = "none";
+    document.getElementById("playing-card").classList.remove("hidden");
+    document.getElementById("offline-card").classList.add("hidden");
 
-    document.getElementById("song-title").innerText = data.song;
-    document.getElementById("artist-name").innerText = data.message;
+    document.getElementById("song-title").innerText = data.song || "Unknown Song";
+    document.getElementById("artist-name").innerText = data.artist || "Unknown Artist";
+    document.getElementById("album-art").src = data.image || "https://i.scdn.co/image/ab67616d0000b273c7c7a4c2b6f2b4d9b1b1b1b1";
 
-    // smooth animation
     gsap.fromTo("#playing-card",
         { opacity: 0, y: 20 },
         { opacity: 1, y: 0, duration: 0.6 }
@@ -68,10 +77,11 @@ function showPlaying(data) {
 }
 
 function showOffline() {
+
     document.getElementById("status-heading").innerText = "⚫ Offline";
 
-    document.getElementById("playing-card").style.display = "none";
-    document.getElementById("offline-card").style.display = "block";
+    document.getElementById("playing-card").classList.add("hidden");
+    document.getElementById("offline-card").classList.remove("hidden");
 
     gsap.fromTo("#offline-card",
         { opacity: 0, y: 20 },
