@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.spotify.api.dto.ApiResponse;
 import com.spotify.api.service.SpotifyAuthService;
 import se.michaelthelin.spotify.exceptions.SpotifyWebApiException;
 
@@ -36,13 +37,13 @@ public class SpotifyAuthController {
     }
 
     @GetMapping("/callback")
-    public ResponseEntity<String> callback(@RequestParam("code") String code) throws ParseException {
+    public ResponseEntity<ApiResponse<String>> callback(@RequestParam("code") String code) throws ParseException {
         try {
             spotifyAuthService.exchangeCodeForTokens(code);
-            return ResponseEntity.ok("Authentication successful. Tokens stored. You can now use Spotify API endpoints.");
+            return ResponseEntity.ok(ApiResponse.success("Authentication successful. Tokens stored. You can now use Spotify API endpoints."));
         } catch (IOException | SpotifyWebApiException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error during token exchange: " + e.getMessage());
+                    .body(ApiResponse.failure("Error during token exchange: " + e.getMessage()));
         }
     }
 }
